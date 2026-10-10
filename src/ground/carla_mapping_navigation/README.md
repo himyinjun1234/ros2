@@ -54,7 +54,7 @@ python3 main.py --mode run --host <宿主机IP> --model models/nn_plan.json \
 
 # ④ ROS 2 / ROS 1
 ros2 launch carla_mapping_navigation main.launch.py host:=<宿主机IP> goal:="20,8"
-roslaunch carla_mapping_navigation main.launch host:=<宿主机IP> goal:="20,8"
+bash main.sh --host <宿主机IP> --goal 20,8
 ```
 
 一键脚本：`bash main.sh --host <宿主机IP>` 或 Windows `main.bat --mode train`。
