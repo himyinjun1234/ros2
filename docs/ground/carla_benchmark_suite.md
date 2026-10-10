@@ -253,7 +253,12 @@ ros2 launch carla_benchmark_suite main.launch.py target:=navigation host:=192.16
 
 # ROS 1
 roslaunch carla_benchmark_suite main.launch benchmark:=true save_dir:=$HOME/shots
-roslaunch carla_benchmark_suite main.launch target:=perception host:=192.168.8.1
+# 模式 D：ROS 1 Noetic —— 入口用 main.sh（会自动挑 python3.10）
+#   roslaunch 只能按 main.py 的 shebang 执行它，而 Noetic 的 python3 是 3.8，
+#   装不上 CARLA 0.9.16 的 cp310+ wheel，补了可执行位也会卡在 import carla。
+#   若系统 python3 本身已是 3.10+，也可用：
+#   roslaunch carla_benchmark_suite main.launch target:=perception host:=192.168.8.1
+bash src/ground/carla_benchmark_suite/main.sh --target perception -- --host 192.168.8.1
 ```
 
 一键脚本：`bash main.sh --benchmark` / `bash main.sh --list`。

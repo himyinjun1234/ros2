@@ -85,7 +85,7 @@ python3 main.py --target navigation -- --mode run --host <宿主机IP> --goal "2
 # ⑤ ROS 2 / ROS 1
 ros2 launch carla_benchmark_suite main.launch.py                    # 发布评测指标
 ros2 launch carla_benchmark_suite main.launch.py target:=perception # 调度子模块
-roslaunch carla_benchmark_suite main.launch target:=navigation host:=<宿主机IP>
+bash main.sh --target navigation -- --host <宿主机IP>
 ```
 
 一键脚本：`bash main.sh --benchmark` 或 Windows `main.bat --list`。

@@ -550,20 +550,48 @@ def run_module(target, extra):
 # ==================================================================== CLI
 def build_parser():
     p = argparse.ArgumentParser(description="CARLA 作业综合整合与性能评价")
-    p.add_argument("--target", choices=list(MODULES.keys()) + [""], default=None,
+    p.add_argument("--target", nargs="?", const=None, choices=list(MODULES.keys()) + [""], default=None,
                    help="调度哪个子模块")
-    p.add_argument("--benchmark", action="store_true",
-                   help="运行基准评测套件（真实测量）")
-    p.add_argument("--list", action="store_true", help="列出所有可调度模块")
+    _add_bool(p, "--benchmark",
+              "运行基准评测套件（真实测量）")
+    _add_bool(p, "--list",
+              "列出所有可调度模块")
     p.add_argument("--which", nargs="*", default=None,
                    help="只评测指定项（perception / navigation / end_to_end）")
     p.add_argument("--epochs", type=int, default=None, help="评测时的训练轮数")
     p.add_argument("--samples", type=int, default=None, help="端到端评测的样本数")
-    p.add_argument("--out", default=None, help="指标 JSON 导出路径")
-    p.add_argument("--save_dir", default=None, help="对比图导出目录")
+    p.add_argument("--out", nargs="?", const=None, default=None, help="指标 JSON 导出路径")
+    p.add_argument("--save_dir", nargs="?", const=None, default=None, help="对比图导出目录")
     p.add_argument("--host", default=None, help="（透传）CARLA 服务端地址")
-    p.add_argument("--launch", action="store_true", help="由 ROS launch 启动")
+    p.add_argument("--port", type=int, default=None, help="（透传）CARLA RPC 端口")
+    _add_bool(p, "--launch",
+              "由 ROS launch 启动")
     return p
+
+
+def _parse_bool(value):
+    """Parse a boolean that arrives as text.
+
+    ROS 1 launch files can only pass arguments as plain text (e.g.
+    ``--follow true`` / ``--follow false``) -- unlike ROS 2, which passes a real
+    parameter and keeps the bool type.  Without this, ``--follow false`` makes
+    ``store_true`` set follow=True and the stray ``false`` is swallowed by
+    ``parse_known_args`` as an unknown positional.
+    """
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    if text in ("1", "true", "yes", "on", "y", "t"):
+        return True
+    if text in ("0", "false", "no", "off", "n", "f", ""):
+        return False
+    raise argparse.ArgumentTypeError(f"无法识别的布尔值：{value!r}")
+
+
+def _add_bool(parser, name, help_text):
+    """Boolean switch: bare ``--flag`` or explicit ``--flag true|false``."""
+    parser.add_argument(name, type=_parse_bool, nargs="?", const=True,
+                        default=False, help=help_text)
 
 
 def main(argv=None):
@@ -583,7 +611,13 @@ def main(argv=None):
         return run_benchmark(save_dir=args.save_dir, out=args.out, which=args.which,
                              epochs=args.epochs, samples=args.samples)
     if args.target:
-        return run_module(args.target, passthrough)
+        # host:= / port:= 是 launch 声明的参数，必须真正传到子模块才有效
+        extra = list(passthrough)
+        if args.host and "--host" not in extra:
+            extra += ["--host", args.host]
+        if args.port and "--port" not in extra:
+            extra += ["--port", str(args.port)]
+        return run_module(args.target, extra)
     build_parser().print_help()
     print("\n提示：先运行 `python3 main.py --list` 查看所有模块。")
     return 0

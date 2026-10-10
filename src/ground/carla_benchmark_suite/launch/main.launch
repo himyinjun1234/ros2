@@ -34,5 +34,5 @@
   <!-- 模式三：调度指定子模块（target 非空且未在跑评测时启用） -->
   <node pkg="carla_benchmark_suite" type="main.py"
         name="carla_benchmark_dispatch" output="screen"
-        args="--target $(arg target) --host $(arg host) -- $(arg extra)"/>
+        args="--target $(arg target) --host $(arg host) --port $(arg port) -- $(arg extra)"/>
 </launch>
