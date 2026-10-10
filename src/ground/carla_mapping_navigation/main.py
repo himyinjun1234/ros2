@@ -521,7 +521,9 @@ def run_offline_demo(save_dir, epochs=200, sim_time=40.0, goal=None, seed=0):
                   f"占据格={grid.occupied_count}")
 
         # ---- 渐进建图快照：体现"边动边建图"，地图随行驶逐步成形 ----
-        if save_dir and k % int(3.0 / DT) == 0:
+        # 每 1.0 s 采一帧。原来按 3.0 s 采，而本演示路线约 6 s 就到达目标，
+        # 只攒到 2 帧，下面的 len(snaps) >= 3 判定不过，3 张进度图根本导不出来。
+        if save_dir and k % max(1, int(1.0 / DT)) == 0:
             snaps.append((k, grid.probability().copy(), list(path_pts)))
 
     os.makedirs(save_dir, exist_ok=True)
@@ -538,6 +540,13 @@ def run_offline_demo(save_dir, epochs=200, sim_time=40.0, goal=None, seed=0):
                 prob, grid, os.path.join(save_dir, f"map_progress_{n + 1}.png"),
                 path_pts=pts, goal=goal,
                 title_t=k * 0 + kk * DT))
+
+    def _snap_known(prob):
+        return float(np.mean((prob > 0.55) | (prob < 0.45)))
+
+    if prog_paths:
+        seq = " → ".join(f"{_snap_known(snaps[i][1]) * 100:.1f}%" for i in idxs)
+        print(f"\n渐进建图已知区域占比：{seq}（最终 {grid.known_ratio * 100:.1f}%）")
 
     print("\n---- 建图结果 ----")
     print(f"占据格数        = {grid.occupied_count}")
