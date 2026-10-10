@@ -42,7 +42,7 @@
 
 ### 2.1 雷达点从传感器坐标系到世界坐标系
 
-激光雷达点在其自身坐标系（$x$ 向前、$y$ 向左），需旋转平移到世界系：
+激光雷达点在其自身坐标系（\(x\) 向前、\(y\) 向左），需旋转平移到世界系：
 
 $$
 \begin{bmatrix} p_x^w \\ p_y^w \end{bmatrix}
@@ -51,11 +51,11 @@ $$
 \mathbf R(\psi)=\begin{bmatrix}\cos\psi & -\sin\psi \\ \sin\psi & \cos\psi\end{bmatrix}
 $$
 
-其中 $\psi$ 为车辆航向角，$(x_v, y_v)$ 为车辆位置。
+其中 \(\psi\) 为车辆航向角，\((x_v, y_v)\) 为车辆位置。
 
 ### 2.2 占用栅格：为什么用对数几率
 
-栅格的每个格子记录"被障碍占据"的概率 $p\in(0,1)$。概率表示在连续更新时有两个问题：
+栅格的每个格子记录"被障碍占据"的概率 \(p\in(0,1)\)。概率表示在连续更新时有两个问题：
 数值会趋近 0 或 1 导致下溢，且多次观测的概率融合公式复杂。因此改用**对数几率**：
 
 $$
@@ -68,8 +68,8 @@ $$
 l_{k} = l_{k-1} + \begin{cases} +l_{\text{hit}} & \text{该格子被命中} \\ -l_{\text{miss}} & \text{射线从该格子穿过} \end{cases}
 $$
 
-本模块取 $l_{\text{hit}}=0.85$、$l_{\text{miss}}=-0.4$，并把 $l$ 截断在 $[-3.0,\ 3.5]$
-以免单点噪声把概率永久钉死。初始 $l=0 \Rightarrow p=0.5$ 表示**未知**。
+本模块取 \(l_{\text{hit}}=0.85\)、\(l_{\text{miss}}=-0.4\)，并把 \(l\) 截断在 \([-3.0,\ 3.5]\)
+以免单点噪声把概率永久钉死。初始 \(l=0 \Rightarrow p=0.5\) 表示**未知**。
 
 !!! note "为什么要标记射线沿途为空闲"
     只标记命中点，栅格只能区分"有障碍"和"没扫到"，无法表达"扫到了，那里是空的"。
@@ -85,11 +85,11 @@ r = \frac{y - y_c}{\Delta} + \frac{N}{2},\qquad
 c = \frac{x - x_c}{\Delta} + \frac{N}{2}
 $$
 
-其中 $(x_c, y_c)$ 为栅格中心（此处取车辆起点），$\Delta=0.5\,\text{m}$ 为分辨率，
-$N=200$ 为栅格边长。
+其中 \((x_c, y_c)\) 为栅格中心（此处取车辆起点），\(\Delta=0.5\,\text{m}\) 为分辨率，
+\(N=200\) 为栅格边长。
 
-如果固定以世界原点为中心且只覆盖 $\pm30\,\text{m}$，而车辆出生点在世界坐标
-$(36,-5)$，则车辆落到栅格索引 $c=132$ 处——**超出 $0\ldots119$ 的有效范围**，
+如果固定以世界原点为中心且只覆盖 \(\pm30\,\text{m}\)，而车辆出生点在世界坐标
+\((36,-5)\)，则车辆落到栅格索引 \(c=132\) 处——**超出 \(0\ldots119\) 的有效范围**，
 所有雷达命中点都会被丢弃，建图结果恒为空。这类"看起来在跑、其实什么都没做"
 的缺陷无法从日志里直接看出，必须靠单元测试卡住（见第 4 节）。
 
@@ -105,7 +105,7 @@ $$
 \underbrace{\frac{D_{\min}}{D_{\max}}}_{\text{最近距离(重复)}}\Big]^\top
 $$
 
-网络结构：$5 \to 64 \to 2$，隐藏层 ReLU，输出层 tanh。
+网络结构：\(5 \to 64 \to 2\)，隐藏层 ReLU，输出层 tanh。
 
 $$
 \mathbf h = \mathrm{ReLU}(W_1\mathbf s + b_1),\qquad
@@ -130,14 +130,14 @@ $$
 \tau^* = \mathrm{clip}\big(0.25 + 0.75\,\tilde D_{\min},\ 0,\ 1\big)
 $$
 
-其中 $\rho_L,\rho_R$ 为左右障碍密度，$\tilde D_{\min}$ 为归一化最近距离。
-**两侧障碍项符号相反且对称**，因此无障碍时（$\rho_L=\rho_R$）不产生额外偏转——
+其中 \(\rho_L,\rho_R\) 为左右障碍密度，\(\tilde D_{\min}\) 为归一化最近距离。
+**两侧障碍项符号相反且对称**，因此无障碍时（\(\rho_L=\rho_R\)）不产生额外偏转——
 这保证"正对目标且无障碍 → 转向为 0"，与物理直觉一致。
 
 !!! warning "油门标签必须用线性输出层"
-    油门标签 $\tau^*\in[0,1]$，而 `MLPPolicy` 的输出为 $\tanh\in[-1,1]$。
-    若直接用它拟合 $[0,1]$ 的目标，网络只能用到一半值域，负值区永远学不到。
-    本模块在训练时把油门做 $[0,1]\to[-1,1]$ 映射，推理时再还原。
+    油门标签 \(\tau^*\in[0,1]\)，而 `MLPPolicy` 的输出为 \(\tanh\in[-1,1]\)。
+    若直接用它拟合 \([0,1]\) 的目标，网络只能用到一半值域，负值区永远学不到。
+    本模块在训练时把油门做 \([0,1]\to[-1,1]\) 映射，推理时再还原。
 
 ## 3. 算法流程
 
@@ -212,11 +212,11 @@ $$
 | 1 | 启动 CARLA 服务端 | [设置并连接到 Carla 模拟器](../set_up_and_connect_to_carla.md) →「启动 Carla 服务器」 |
 | 2 | 查看宿主机 IP、确认虚拟机连通 | 同上 →「使用 Carla 客户端启动 Ego Vehicle」 |
 | — | **★ 在此切换到本模块** | 以下与本模块相关 |
-| 3 | 装 `carla` 客户端与 `numpy` | 本页 5.3 节 |
-| 4 | 离线训练规划神经网络 | 本页 5.5 节（无需 CARLA） |
-| 5 | 运行在线建图 + NN 导航 | 本页 5.7 节 |
+| 3 | 装 `carla` 客户端与 `numpy` | [本页 5.3 节](#env-prep) |
+| 4 | 离线训练规划神经网络 | [本页 5.5 节](#offline-train)（无需 CARLA） |
+| 5 | 运行在线建图 + NN 导航 | [本页 5.8 节](#online-run) |
 
-### 5.3 步骤 0：环境准备
+### 5.3 步骤 0：环境准备 <span id="env-prep"></span>
 
 CARLA 服务端的下载安装与启动、宿主机 IP 与端口 2000 的查看、虚拟机网络设置等
 **通用步骤与已有示例完全相同，本文不重复**，请参考
@@ -237,13 +237,38 @@ pip3 install <CARLA>/PythonAPI/carla/dist/carla-0.9.16-cp310-cp310-manylinux_2_3
 
 ### 5.4 步骤 1：编译本功能包（ROS 2）
 
+本模块的源代码位于**本仓库**（`OpenHUTB/ros2`）的
+`src/ground/carla_mapping_navigation/`。ROS 2 要求功能包放在工作空间的 `src/` 目录下，
+因此先把本仓库克隆到工作空间的 `src/`：
+
+```bash
+mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
+git clone https://github.com/OpenHUTB/ros2.git     # 换成你自己的 fork 亦可
+```
+
+克隆后的目录关系如下，`colcon build` 必须在**工作空间根目录**执行：
+
+```
+~/ros2_ws/                                   <- 工作空间根目录，colcon 在这里运行
+└── src/
+    └── ros2/                                <- 本仓库（git clone 得到）
+        └── src/ground/
+            └── carla_mapping_navigation/                       <- 本模块源代码
+```
+
+因此后文写的 `src/ground/carla_mapping_navigation/...`，实际路径是
+`~/ros2_ws/src/ros2/src/ground/carla_mapping_navigation/...`。编译并激活环境：
+
 ```bash
 cd ~/ros2_ws
 colcon build --packages-select carla_mapping_navigation --symlink-install
 source install/setup.bash
 ```
 
-### 5.5 步骤 2：离线训练规划神经网络（无需 CARLA）
+> 若本仓库已克隆在别处，把上面的 `~/ros2_ws/src/ros2` 换成实际路径即可，
+> 只要保证执行 `colcon build` 的工作空间根目录下存在 `src/`。
+
+### 5.5 步骤 2：离线训练规划神经网络（无需 CARLA） <span id="offline-train"></span>
 
 ```bash
 python3 src/ground/carla_mapping_navigation/main.py --mode train \
@@ -262,13 +287,20 @@ python3 src/ground/carla_mapping_navigation/main.py --headless --demo \
 该模式在合成环境中完成「边动边建图 + NN 规划导航」，导出 5 张图：
 占用栅格地图、渐进建图快照 3 张、训练损失曲线。适合在无 3D 加速的虚拟机中取证。
 
-### 5.7 步骤 4：验证与 CARLA 服务端的连接
+### 5.7 步骤 4：验证与 CARLA 服务端的连接 <span id="conn-check"></span>
+
+命令里的 `192.168.8.1` 是**运行 CARLA 服务端的宿主机（Windows）IP**：
+在宿主机上执行 `ipconfig`，取 VMware 虚拟网卡（`VMnet8`）的 IPv4 地址即可
+（本机该地址为 `192.168.8.1`，虚拟机 `ens33` 为 `192.168.8.131`，两者同网段）。
+查看方式与已有示例一致，详见
+[设置并连接到 Carla 模拟器](../set_up_and_connect_to_carla.md)
+→「使用 Carla 客户端启动 Ego Vehicle」。
 
 ```bash
 python3 -c "import carla; c=carla.Client('192.168.8.1',2000); c.set_timeout(10); print('CONNECT OK:', c.get_world().get_map().name)"
 ```
 
-### 5.8 步骤 5：运行在线建图 + NN 导航
+### 5.8 步骤 5：运行在线建图 + NN 导航 <span id="online-run"></span>
 
 ```bash
 # 模式 A：独立运行（--host 填宿主机 IP）
@@ -350,7 +382,7 @@ ros2 run rviz2 rviz2 -d $(ros2 pkg prefix carla_mapping_navigation)/share/carla_
 可用 `python3 test/test_mapping_logic.py` 快速回归验证。
 
 **Q2：`--mode run` 报"缺少 carla 模块"？**
-需安装 CARLA 0.9.16 的 Python 客户端 wheel，见 5.3 节。
+需安装 CARLA 0.9.16 的 Python 客户端 wheel，见 [5.3 节](#env-prep)。
 若只想验证算法，可改用 `--headless --demo`（不需要 CARLA）。
 
 **Q3：RViz 里地图是空的？**
@@ -365,21 +397,22 @@ ros2 run rviz2 rviz2 -d $(ros2 pkg prefix carla_mapping_navigation)/share/carla_
 
 ### 6.1 指标定义
 
-**建图覆盖率**：已知格子（$p>0.55$ 或 $p<0.45$）占栅格总数的比例：
+**建图覆盖率**：已知格子（\(p>0.55\) 或 \(p<0.45\)）占栅格总数的比例：
 
 $$
 \text{Coverage} = \frac{1}{N^2}\sum_{i,j}\mathbb{1}\big[p_{ij}>0.55 \lor p_{ij}<0.45\big]
 $$
 
-**占据格数**：$p>0.6$ 的格子数，反映地图中障碍物的丰富程度。
+**占据格数**：\(p>0.6\) 的格子数，反映地图中障碍物的丰富程度。
 
-**导航精度**：车辆到目标的**最近距离** $D_{\min}$，
+**导航精度**：车辆到目标的**最近距离** \(D_{\min}\)，
 
 $$
 D_{\min} = \min_k \big\|\mathbf p_k - \mathbf p_{\text{goal}}\big\|
 $$
 
-**规划损失**：训练集 MSE，$ \mathcal L = \frac{1}{N}\sum_i\|\hat{\mathbf y}_i - \mathbf y_i^*\|^2$。
+**规划损失**：训练集 MSE，
+\( \mathcal L = \frac{1}{N}\sum_i\|\hat{\mathbf y}_i - \mathbf y_i^*\|^2\)。
 
 ### 6.2 实测结果（离线取证模式，本机实测）
 
@@ -401,9 +434,9 @@ $$
 | 栅格中心改为以起点为中心 | 车在栅格**外**（索引 132 > 119），建图恒为空 | 车在栅格中心，正常建图 | 最严重缺陷，加单元测试卡死 |
 | 状态第 5 维改归一化 | 原始米数 0.3~8.0，与其余维差 8 倍 | 全部落在 [0,1] | 消除量纲失衡 |
 | 加入射线沿途空闲标记 | 只知"有障碍/没扫到" | 区分占据/空闲/未知 | 地图才可用于通行判断 |
-| 油门标签值域对齐 | $\tanh$ 输出只用一半值域 | 训练时映射到 $[-1,1]$，推理还原 | 避免负值区永久学不到 |
-| 对称化避障偏置 | 障碍项不对称会产生常值偏转 | $\rho_R-\rho_L$ 对称 | 无障碍时转向归零 |
-| 对数几率截断 | 单点噪声可能钉死概率 | 截断到 $[-3.0, 3.5]$ | 抗噪 |
+| 油门标签值域对齐 | \(\tanh\) 输出只用一半值域 | 训练时映射到 \([-1,1]\)，推理还原 | 避免负值区永久学不到 |
+| 对称化避障偏置 | 障碍项不对称会产生常值偏转 | \(\rho_R-\rho_L\) 对称 | 无障碍时转向归零 |
+| 对数几率截断 | 单点噪声可能钉死概率 | 截断到 \([-3.0, 3.5]\) | 抗噪 |
 | 加入渐进建图快照 | 只有最终地图 | 3 张中间快照 + 时刻进度条 | 直观证明"边动边建图" |
 
 ### 6.4 结论
