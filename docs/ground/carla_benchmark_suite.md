@@ -54,7 +54,7 @@ $$
 \text{AoS} = \frac{1}{N-1}\sum_{k=2}^{N}\big|\delta_k - \delta_{k-1}\big|
 $$
 
-**转向饱和比例**：转向被打到边界 $\pm1$ 的比例，过高说明控制裕度不足：
+**转向饱和比例**：转向被打到边界 \(\pm1\) 的比例，过高说明控制裕度不足：
 
 $$
 \rho_{\text{sat}} = \frac{1}{N}\sum_{k=1}^{N}\mathbb{1}\big[|\delta_k| \ge 0.99\big]
@@ -98,7 +98,7 @@ $$
 
 ### 2.3 指标量纲差异的处理
 
-各指标量纲差异极大（MSE 约 $10^{-3}$、准确率约 $10^{0}$、占据格数约 $10^{3}$），
+各指标量纲差异极大（MSE 约 \(10^{-3}\)、准确率约 \(10^{0}\)、占据格数约 \(10^{3}\)），
 在同一张条形图上直接对比会导致小数值指标**完全看不见**。
 
 本模块的对比图按**组内最大值归一化**条长，并在条形右侧用点阵绘制**真实数值**，
@@ -164,8 +164,8 @@ launch 文件**（复用其节点与参数定义，避免在本包内重复描�
 | 1 | 启动 CARLA 服务端 | [设置并连接到 Carla 模拟器](../set_up_and_connect_to_carla.md) →「启动 Carla 服务器」 |
 | 2 | 查看宿主机 IP、确认虚拟机连通 | 同上 →「使用 Carla 客户端启动 Ego Vehicle」 |
 | — | **★ 在此切换到本模块** | 以下与本模块相关 |
-| 3 | 先离线跑基准评测（无需 CARLA） | 本页 5.5 节 |
-| 4 | 再按需调度子作业 | 本页 5.7 节 |
+| 3 | 先离线跑基准评测（无需 CARLA） | [本页 5.5 节](#bench) |
+| 4 | 再按需调度子作业 | [本页 5.7 节](#dispatch) |
 
 ### 5.3 步骤 0：环境准备
 
@@ -183,13 +183,38 @@ CARLA 服务端的下载安装与启动、宿主机 IP 与端口 2000 的查看�
     `--list` 与 `--benchmark` 都在本地完成，不连接 CARLA 服务端。
     只有在 `--target` 调度需要连 CARLA 的子作业（如 `navigation` 的 `--mode run`）时才需要。
 
-### 5.4 步骤 1：编译本功能包（ROS 2）
+### 5.4 步骤 1：编译本功能包（ROS 2） <span id="build"></span>
+
+本模块的源代码位于**本仓库**（`OpenHUTB/ros2`）的
+`src/ground/carla_benchmark_suite/`。ROS 2 要求功能包放在工作空间的 `src/` 目录下，
+因此先把本仓库克隆到工作空间的 `src/`：
+
+```bash
+mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
+git clone https://github.com/OpenHUTB/ros2.git     # 换成你自己的 fork 亦可
+```
+
+克隆后的目录关系如下，`colcon build` 必须在**工作空间根目录**执行：
+
+```
+~/ros2_ws/                                   <- 工作空间根目录，colcon 在这里运行
+└── src/
+    └── ros2/                                <- 本仓库（git clone 得到）
+        └── src/ground/
+            └── carla_benchmark_suite/                       <- 本模块源代码
+```
+
+因此后文写的 `src/ground/carla_benchmark_suite/...`，实际路径是
+`~/ros2_ws/src/ros2/src/ground/carla_benchmark_suite/...`。编译并激活环境：
 
 ```bash
 cd ~/ros2_ws
 colcon build --packages-select carla_benchmark_suite --symlink-install
 source install/setup.bash
 ```
+
+> 若本仓库已克隆在别处，把上面的 `~/ros2_ws/src/ros2` 换成实际路径即可，
+> 只要保证执行 `colcon build` 的工作空间根目录下存在 `src/`。
 
 若同时使用被调度/被评测的四个子功能包，一并编译：
 
@@ -199,7 +224,7 @@ colcon build --packages-select carla_keyboard_control carla_perception_control \
              --symlink-install
 ```
 
-### 5.5 步骤 2：查看模块总览与运行基准评测（无需 CARLA）
+### 5.5 步骤 2：查看模块总览与运行基准评测（无需 CARLA） <span id="bench"></span>
 
 ```bash
 python3 src/ground/carla_benchmark_suite/main.py --list
@@ -213,13 +238,20 @@ python3 src/ground/carla_benchmark_suite/main.py --benchmark \
 python3 src/ground/carla_benchmark_suite/main.py --benchmark --which end_to_end --samples 60
 ```
 
-### 5.6 步骤 3：验证与 CARLA 服务端的连接（仅调度在线子作业时需要）
+### 5.6 步骤 3：验证与 CARLA 服务端的连接（仅调度在线子作业时需要） <span id="conn-check"></span>
+
+命令里的 `192.168.8.1` 是**运行 CARLA 服务端的宿主机（Windows）IP**：
+在宿主机上执行 `ipconfig`，取 VMware 虚拟网卡（`VMnet8`）的 IPv4 地址即可
+（本机该地址为 `192.168.8.1`，虚拟机 `ens33` 为 `192.168.8.131`，两者同网段）。
+查看方式与已有示例一致，详见
+[设置并连接到 Carla 模拟器](../set_up_and_connect_to_carla.md)
+→「使用 Carla 客户端启动 Ego Vehicle」。
 
 ```bash
 python3 -c "import carla; c=carla.Client('192.168.8.1',2000); c.set_timeout(10); print('CONNECT OK:', c.get_world().get_map().name)"
 ```
 
-### 5.7 步骤 4：调度子作业
+### 5.7 步骤 4：调度子作业 <span id="dispatch"></span>
 
 ```bash
 # 作业二：离线取证（无需 CARLA）
@@ -345,7 +377,7 @@ bash src/ground/carla_benchmark_suite/main.sh --target perception -- --host 192.
 
 **Q4：ROS launch 调度子模块时找不到子包？**
 调度模式会包含子功能包自己的 `main.launch.py`，因此**必须先编译那个子包**
-（见 5.4 节）。若只需发布评测指标（不调度），则不需要任何子包。
+（见 [5.4 节](#build)）。若只需发布评测指标（不调度），则不需要任何子包。
 
 ## 6. 性能评价
 
@@ -386,7 +418,7 @@ bash src/ground/carla_benchmark_suite/main.sh --target perception -- --host 192.
 |---|---|---|
 | **原版用随机数造指标** | `np.random.seed(0)` 生成假的转向/速度/误差序列，指标与算法无关 | 改为**真实训练 + 回放**测量；指标可复现、可验证 |
 | **`nn_models.py` 多副本漂移** | 作业四修了 maxpool 梯度与 tanh 两处缺陷后，评价包仍用旧副本，端到端 MAE 一度测得 **36.12**（正常 <0.3） | 统一各包副本，并新增**副本一致性回归测试**，分歧即失败并列出差异文件 |
-| 指标量纲差异导致图不可读 | MSE 约 $10^{-3}$、占据格数约 $10^{3}$，同图对比时小数值完全看不见 | 对比图按**组内最大值归一化**条长，并用点阵标注真实数值 |
+| 指标量纲差异导致图不可读 | MSE 约 \(10^{-3}\)、占据格数约 \(10^{3}\)，同图对比时小数值完全看不见 | 对比图按**组内最大值归一化**条长，并用点阵标注真实数值 |
 
 ### 6.4 结论
 
