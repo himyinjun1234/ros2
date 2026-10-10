@@ -214,8 +214,9 @@ python3 -m pytest test/test_control_logic.py -v
 
 覆盖点包括：低速挂倒挡 / 有速度刹车、阈值边界与可配置性、油门与刹车互斥、
 转向方向与饱和、微调幅度小于全转向、所有按键组合下控制量落在合法区间，
-以及「ROS 节点确实复用了同一份实现」「POSIX 模块确实在函数内导入」等约束。
-无需安装 CARLA 服务端即可运行。
+以及「ROS 节点确实复用了同一份实现」「POSIX 模块确实在函数内导入」
+「连不上 CARLA 时打印排查提示而不是抛 traceback」等约束。
+无需安装 CARLA 服务端即可运行（共 17 项）。
 
 ---
 
@@ -447,6 +448,7 @@ x=  47.62 y=  -2.40 v= 0.22 m/s | th=0.5 st=+0.00 br=0.0 rev=1
 |---|---|
 | `ModuleNotFoundError: No module named 'carla'` | 按 5.3 安装 CARLA 0.9.16 客户端；确认 `pip3` 与运行 `main.py` 用的是**同一个**解释器（Noetic 下用 `python3.10 -m pip`） |
 | 客户端连接崩溃 / `std::bad_alloc` | 客户端版本须与服务器一致（均为 0.9.16） |
+| `RuntimeError: time-out of 20000ms while waiting for the simulator` | 连不上服务端：确认宿主机已运行 `CarlaUE4-Win64-Shipping.exe`、防火墙放行 2000 端口、`host` 填宿主机 VMnet8 地址（`main.py` 超时后会把这几条直接打印出来）；不想开 CARLA 时可先跑 `python3 test/test_control_logic.py` 确认代码本身没问题 |
 | **虚拟机中 pygame 窗口打不开或黑屏** | ① 改用无窗口取证模式 `--headless --demo --save_dir`；② 或执行 `export LIBGL_ALWAYS_SOFTWARE=1`（`main.sh` 已自动设置）；③ 根治：VMware「虚拟机设置 → 显示器 → 加速 3D 图形」勾选后重启 |
 | 键盘无反应 | 焦点需在控制窗口；或改用终端后端（ROS 2 节点模式支持 `--terminal`） |
 | 画面黑屏但程序在跑 | 宿主机 IP 填错；或地图正在切换，稍候 |

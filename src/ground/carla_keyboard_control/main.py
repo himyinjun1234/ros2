@@ -99,7 +99,23 @@ def run_standalone(args):
         pygame.display.set_caption("CARLA 键控无人车  W/S=油门/刹车(倒车) A/D=转向")
         font = pygame.font.Font(None, 26)
 
-    client, world = cc.connect(args.host, args.port, args.town)
+    try:
+        client, world = cc.connect(args.host, args.port, args.town)
+    except Exception as exc:  # noqa: BLE001
+        # 连不上时给可操作的提示，而不是抛一长串 traceback 让使用者无从下手。
+        if pygame is not None:
+            pygame.quit()
+        print(f"\n[错误] 连接 CARLA 服务端失败：{exc}")
+        print(f"       目标 {args.host}:{args.port}，地图 {args.town}。"
+              "按下面顺序排查：")
+        print("       1) 宿主机 CARLA 服务端是否已启动"
+              "（Windows 上运行 CarlaUE4-Win64-Shipping.exe）")
+        print("       2) 宿主机防火墙是否放行 2000 端口；"
+              "host 是否填宿主机 VMnet8 地址")
+        print("       3) 不想开 CARLA 也想确认代码本身没问题"
+              "（纯逻辑单元测试，不连服务端）：")
+        print("          python3 test/test_control_logic.py")
+        return 1
     vehicle, tf = cc.spawn_vehicle(world, args.ego_blueprint)
     holder = {"frame": None}
     # 传感器须常驻引用，否则被 Python 回收后画面消失

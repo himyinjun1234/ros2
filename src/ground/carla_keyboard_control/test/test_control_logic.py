@@ -225,6 +225,22 @@ def test_main_launch_passes_declared_args_to_node():
         '（漏传会让 follow:=true 之类的设置不起作用）')
 
 
+def test_connect_failure_prints_actionable_hint():
+    """连不上 CARLA 时要打印中文排查提示，而不是抛一长串 traceback。
+
+    实测（不启动服务端直接跑 `--headless --demo`）原实现会在 20 秒超时后
+    直接抛 `RuntimeError: time-out of 20000ms ...`，使用者只看到 traceback，
+    不知道该检查服务端、防火墙还是 host 地址。
+    """
+    src = open(os.path.join(PKG_ROOT, 'main.py'), encoding='utf-8').read()
+    assert '连接 CARLA 服务端失败' in src, '缺少中文的连接失败提示'
+    assert 'test_control_logic.py' in src, \
+        '应告诉使用者不开 CARLA 时怎么自查（跑纯逻辑单元测试）'
+    i = src.index('cc.connect(')
+    assert 'try:' in src[max(0, i - 200):i], \
+        'cc.connect(...) 必须包在 try 里，否则超时会抛出 traceback'
+
+
 def _run_all():
     """自带运行器：不依赖 pytest 也能跑完所有 test_* 函数。"""
     fns = sorted(k for k in list(globals()) if k.startswith('test_'))
