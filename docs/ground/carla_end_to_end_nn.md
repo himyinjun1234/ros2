@@ -54,7 +54,7 @@ $$
 \delta = \pi_\theta(\mathbf I)
 $$
 
-参数 $\theta$ 通过**行为克隆（behavioral cloning）**从专家驾驶数据中学得——
+参数 \(\theta\) 通过**行为克隆（behavioral cloning）**从专家驾驶数据中学得——
 这也是 NVIDIA 在 2016 年 "End to End Learning for Self-Driving Cars" 中采用的思路。
 
 ### 2.2 卷积神经网络结构
@@ -73,10 +73,10 @@ $$
 各层含义：
 
 - **卷积层**：提取局部空间特征（车道线边缘、方向、曲率），权重共享使参数量与图像尺寸解耦。
-- **ReLU**：$\mathrm{ReLU}(z)=\max(0,z)$，提供非线性，缓解梯度消失。
-- **最大池化**：$2\times2$ 窗口取最大值，提供平移不变性并降维。
+- **ReLU**：\(\mathrm{ReLU}(z)=\max(0,z)\)，提供非线性，缓解梯度消失。
+- **最大池化**：\(2\times2\) 窗口取最大值，提供平移不变性并降维。
 - **全局平均池化**：把每个通道的特征图压成一个数，避免全连接层的参数爆炸。
-- **tanh 输出层**：把结果压到 $[-1,1]$，与 CARLA 的 `steer` 值域一致。
+- **tanh 输出层**：把结果压到 \([-1,1]\)，与 CARLA 的 `steer` 值域一致。
 
 ### 2.3 损失函数与反向传播
 
@@ -99,8 +99,8 @@ $$
 即梯度**只回传给窗口内取到最大值的那一个位置**。
 
 !!! danger "一个会让网络完全学不动的实现缺陷"
-    早期实现把池化输出梯度**直接赋给窗口内全部 $p^2$ 个位置**，等价于把梯度放大
-    $p^2$ 倍、并把梯度错误地分给了未被选中的元素。后果是网络**塌缩成常数输出**：
+    早期实现把池化输出梯度**直接赋给窗口内全部 \(p^2\) 个位置**，等价于把梯度放大
+    \(p^2\) 倍、并把梯度错误地分给了未被选中的元素。后果是网络**塌缩成常数输出**：
 
     | 指标 | 缺陷版本 | 修复后 |
     |---|---|---|
@@ -114,14 +114,14 @@ $$
 
 ### 2.4 训练/推理一致性
 
-训练时网络输出为 $\tanh(z)$，推理时**必须做同样的 tanh**：
+训练时网络输出为 \(\tanh(z)\)，推理时**必须做同样的 tanh**：
 
 $$
 \hat\delta = \tanh(z) \in (-1,1)
 $$
 
-若推理时遗漏 tanh，输出是无界线性值。实测曾出现预测值达 $\pm13$，
-而标签在 $[-1,1]$，MAE 高达 13.47——训练与推理不一致是端到端模型最常见的隐性缺陷。
+若推理时遗漏 tanh，输出是无界线性值。实测曾出现预测值达 \(\pm13\)，
+而标签在 \([-1,1]\)，MAE 高达 13.47——训练与推理不一致是端到端模型最常见的隐性缺陷。
 
 ### 2.5 行为克隆的数据采集
 
@@ -139,8 +139,8 @@ $$
 \delta^* = \mathrm{clip}\!\Big(\frac{1}{g}\arctan\!\Big(\frac{2L\sin e_\psi}{d}\Big),-1,1\Big)
 $$
 
-其中 $L=2.5\,\text{m}$ 为轴距，$g=1.2217\,\text{rad}$ 为 `steer` 到前轮转角的折算系数，
-$d$ 为前视距离。因为专家确实在"看着路开"，图像与标签天然对应。
+其中 \(L=2.5\,\text{m}\) 为轴距，\(g=1.2217\,\text{rad}\) 为 `steer` 到前轮转角的折算系数，
+\(d\) 为前视距离。因为专家确实在"看着路开"，图像与标签天然对应。
 
 **采集顺序**也必须注意：先 `tick()` 推进场景 → 读当前图像与位姿 → 算此刻专家转向
 → 记为标签。若反过来（先施加控制再 tick 再读图），图像与标签会**错开一帧**。
@@ -189,7 +189,7 @@ headless --demo（无需 CARLA / 无图形界面 / 无 TensorFlow）：
 
 ### 4.2 `nn_models.py` — 纯 numpy 神经网络库
 
-`SimpleCNN`：$3\to8\to8$ 通道两层卷积 + 两层最大池化 + 全局平均池化 + 全连接 tanh 输出。
+`SimpleCNN`：\(3\to8\to8\) 通道两层卷积 + 两层最大池化 + 全局平均池化 + 全连接 tanh 输出。
 含前向传播、MSE 损失、完整反向传播（**maxpool 按 argmax 回传**）与 JSON 存取。
 
 ### 4.3 `end_to_end_node.py` — ROS 2 节点
@@ -221,11 +221,11 @@ headless --demo（无需 CARLA / 无图形界面 / 无 TensorFlow）：
 | 1 | 启动 CARLA 服务端 | [设置并连接到 Carla 模拟器](../set_up_and_connect_to_carla.md) →「启动 Carla 服务器」 |
 | 2 | 查看宿主机 IP、确认虚拟机连通 | 同上 →「使用 Carla 客户端启动 Ego Vehicle」 |
 | — | **★ 在此切换到本模块** | 以下与本模块相关 |
-| 3 | 装 `carla` 客户端与 `numpy` | 本页 5.3 节 |
-| 4 | 离线取证（无需 CARLA，先确认链路通） | 本页 5.5 节 |
+| 3 | 装 `carla` 客户端与 `numpy` | [本页 5.3 节](#env-prep) |
+| 4 | 离线取证（无需 CARLA，先确认链路通） | [本页 5.5 节](#offline-demo) |
 | 5 | 采集 → 训练 → 端到端驾驶 | 本页 5.7 ~ 5.9 节 |
 
-### 5.3 步骤 0：环境准备
+### 5.3 步骤 0：环境准备 <span id="env-prep"></span>
 
 CARLA 服务端的下载安装与启动、宿主机 IP 与端口 2000 的查看、虚拟机网络设置等
 **通用步骤与已有示例完全相同，本文不重复**，请参考
@@ -250,13 +250,38 @@ pip3 install <CARLA>/PythonAPI/carla/dist/carla-0.9.16-cp310-cp310-manylinux_2_3
 
 ### 5.4 步骤 1：编译本功能包（ROS 2）
 
+本模块的源代码位于**本仓库**（`OpenHUTB/ros2`）的
+`src/ground/carla_end_to_end_nn/`。ROS 2 要求功能包放在工作空间的 `src/` 目录下，
+因此先把本仓库克隆到工作空间的 `src/`：
+
+```bash
+mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
+git clone https://github.com/OpenHUTB/ros2.git     # 换成你自己的 fork 亦可
+```
+
+克隆后的目录关系如下，`colcon build` 必须在**工作空间根目录**执行：
+
+```
+~/ros2_ws/                                   <- 工作空间根目录，colcon 在这里运行
+└── src/
+    └── ros2/                                <- 本仓库（git clone 得到）
+        └── src/ground/
+            └── carla_end_to_end_nn/                       <- 本模块源代码
+```
+
+因此后文写的 `src/ground/carla_end_to_end_nn/...`，实际路径是
+`~/ros2_ws/src/ros2/src/ground/carla_end_to_end_nn/...`。编译并激活环境：
+
 ```bash
 cd ~/ros2_ws
 colcon build --packages-select carla_end_to_end_nn --symlink-install
 source install/setup.bash
 ```
 
-### 5.5 步骤 2：离线取证（无需 CARLA、无图形界面、无 TensorFlow）
+> 若本仓库已克隆在别处，把上面的 `~/ros2_ws/src/ros2` 换成实际路径即可，
+> 只要保证执行 `colcon build` 的工作空间根目录下存在 `src/`。
+
+### 5.5 步骤 2：离线取证（无需 CARLA、无图形界面、无 TensorFlow） <span id="offline-demo"></span>
 
 ```bash
 python3 src/ground/carla_end_to_end_nn/main.py --headless --demo \
@@ -266,7 +291,14 @@ python3 src/ground/carla_end_to_end_nn/main.py --headless --demo \
 该模式用**合成道路图像**（车道线弯曲量与标签一致）训练端到端 CNN 并导出 3 张证据图。
 适合在无 3D 加速的虚拟机中先确认整条链路可用。纯 numpy 训练约需 3~4 分钟。
 
-### 5.6 步骤 3：验证与 CARLA 服务端的连接
+### 5.6 步骤 3：验证与 CARLA 服务端的连接 <span id="conn-check"></span>
+
+命令里的 `192.168.8.1` 是**运行 CARLA 服务端的宿主机（Windows）IP**：
+在宿主机上执行 `ipconfig`，取 VMware 虚拟网卡（`VMnet8`）的 IPv4 地址即可
+（本机该地址为 `192.168.8.1`，虚拟机 `ens33` 为 `192.168.8.131`，两者同网段）。
+查看方式与已有示例一致，详见
+[设置并连接到 Carla 模拟器](../set_up_and_connect_to_carla.md)
+→「使用 Carla 客户端启动 Ego Vehicle」。
 
 ```bash
 python3 -c "import carla; c=carla.Client('192.168.8.1',2000); c.set_timeout(10); print('CONNECT OK:', c.get_world().get_map().name)"
@@ -356,11 +388,11 @@ bash src/ground/carla_end_to_end_nn/main.sh --host 192.168.8.1 --mode test
 `python3 test/test_end_to_end_logic.py` 回归验证这两点。
 
 **Q2：MAE 出现几十甚至十几的数值？**
-这是**推理时遗漏 tanh** 的典型症状——转向值域应在 $[-1,1]$，MAE 不可能大于 2。
+这是**推理时遗漏 tanh** 的典型症状——转向值域应在 \([-1,1]\)，MAE 不可能大于 2。
 检查 `predict()` 与训练是否使用同一输出激活。
 
 **Q3：`--mode collect/test` 报"缺少 carla 模块"？**
-需安装 CARLA 0.9.16 的 Python 客户端 wheel，见 5.3 节。
+需安装 CARLA 0.9.16 的 Python 客户端 wheel，见 [5.3 节](#env-prep)。
 只想验证算法可改用 `--headless --demo`（不需要 CARLA）。
 
 **Q4：纯 numpy 训练太慢？**
@@ -393,7 +425,7 @@ $$
 \text{Acc}_{\text{sign}} = \frac{1}{N}\sum_{i=1}^{N}\mathbb 1\big[\mathrm{sgn}(\hat\delta_i)=\mathrm{sgn}(\delta_i^*)\big]
 $$
 
-**零输出基线**：$ \text{MAE}_{\text{base}} = \frac{1}{N}\sum_i|\delta_i^*|$。
+**零输出基线**：\( \text{MAE}_{\text{base}} = \frac{1}{N}\sum_i|\delta_i^*|\)。
 网络 MAE 必须**明显低于**该基线，才能说明它真的学到了映射（否则等价于恒输出 0）。
 
 ### 6.2 实测结果（离线取证模式，本机实测）
@@ -421,7 +453,7 @@ $$
 
 ### 6.4 结论
 
-- **端到端可行**：单个 CNN 仅凭 $60\times80\times3$ 的相机图像即可输出转向，
+- **端到端可行**：单个 CNN 仅凭 \(60\times80\times3\) 的相机图像即可输出转向，
   方向判对率 98.0%、相关系数 +0.992，验证了"像素 → 控制"的直接映射可以被学到。
 - **无分层**：推理路径中不存在任何人工的感知/规划环节，转向完全由网络权重决定。
 - **与逐层方案对比**：作业二/三采用"感知 NN + 控制 NN"的分层方案，
