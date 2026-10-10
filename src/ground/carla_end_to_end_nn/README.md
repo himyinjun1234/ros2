@@ -57,7 +57,7 @@ python3 main.py --mode test --host <宿主机IP> --model_path models/cnn.json --
 
 # ⑤ ROS 2 / ROS 1
 ros2 launch carla_end_to_end_nn main.launch.py host:=<宿主机IP>
-roslaunch carla_end_to_end_nn main.launch host:=<宿主机IP> mode:=test
+bash main.sh --host <宿主机IP> --mode test
 ```
 
 一键脚本：`bash main.sh --host <宿主机IP>` 或 Windows `main.bat --headless --demo`。

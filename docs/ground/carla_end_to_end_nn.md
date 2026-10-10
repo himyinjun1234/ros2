@@ -307,8 +307,12 @@ python3 src/ground/carla_end_to_end_nn/main.py --mode test \
 # 模式 B：ROS 2 Humble
 ros2 launch carla_end_to_end_nn main.launch.py host:=192.168.8.1 model_path:=models/cnn.json
 
-# 模式 C：ROS 1 Noetic
-roslaunch carla_end_to_end_nn main.launch host:=192.168.8.1 mode:=test
+# 模式 C：ROS 1 Noetic —— 入口用 main.sh（会自动挑 python3.10）
+#   roslaunch 只能按 main.py 的 shebang 执行它，而 Noetic 的 python3 是 3.8，
+#   装不上 CARLA 0.9.16 的 cp310+ wheel，补了可执行位也会卡在 import carla。
+#   若系统 python3 本身已是 3.10+，也可用：
+#   roslaunch carla_end_to_end_nn main.launch host:=192.168.8.1 mode:=test
+bash src/ground/carla_end_to_end_nn/main.sh --host 192.168.8.1 --mode test
 ```
 
 也可用一键脚本：`bash main.sh --host 192.168.8.1`。

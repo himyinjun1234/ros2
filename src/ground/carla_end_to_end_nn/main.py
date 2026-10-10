@@ -591,11 +591,39 @@ def build_parser():
     p.add_argument("--backend", choices=["numpy", "tf"], default="numpy",
                    help="numpy=纯numpy SimpleCNN（默认，无需 TensorFlow）；tf=tf.keras")
     p.add_argument("--samples", type=int, default=150, help="离线取证：合成样本数")
-    p.add_argument("--headless", action="store_true", help="离线取证模式（无需 CARLA/图形界面）")
-    p.add_argument("--demo", action="store_true", help="运行内置演示序列")
-    p.add_argument("--save_dir", default=None, help="取证图导出目录")
-    p.add_argument("--launch", action="store_true", help="由 ROS launch 启动")
+    _add_bool(p, "--headless",
+              "离线取证模式（无需 CARLA/图形界面）")
+    _add_bool(p, "--demo",
+              "运行内置演示序列")
+    p.add_argument("--save_dir", nargs="?", const=None, default=None, help="取证图导出目录")
+    _add_bool(p, "--launch",
+              "由 ROS launch 启动")
     return p
+
+
+def _parse_bool(value):
+    """Parse a boolean that arrives as text.
+
+    ROS 1 launch files can only pass arguments as plain text (e.g.
+    ``--follow true`` / ``--follow false``) -- unlike ROS 2, which passes a real
+    parameter and keeps the bool type.  Without this, ``--follow false`` makes
+    ``store_true`` set follow=True and the stray ``false`` is swallowed by
+    ``parse_known_args`` as an unknown positional.
+    """
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    if text in ("1", "true", "yes", "on", "y", "t"):
+        return True
+    if text in ("0", "false", "no", "off", "n", "f", ""):
+        return False
+    raise argparse.ArgumentTypeError(f"无法识别的布尔值：{value!r}")
+
+
+def _add_bool(parser, name, help_text):
+    """Boolean switch: bare ``--flag`` or explicit ``--flag true|false``."""
+    parser.add_argument(name, type=_parse_bool, nargs="?", const=True,
+                        default=False, help=help_text)
 
 
 def main(argv=None):
